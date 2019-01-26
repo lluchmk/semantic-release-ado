@@ -4,8 +4,8 @@
   "description": "Semantic release plugin for automatic releases on Azure DevOps pipelines.",
   "main": "index.js",
   "scripts": {
-		"lint": "eslint lib index.js"
-	},
+    "lint": "eslint lib index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lluchmk/semantic-release-ado.git"
@@ -21,9 +21,7 @@
     "azure",
     "pipelines"
   ],
-  "dependencies": {
-    "execa": "^1.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "eslint": "^5.12.1",
     "eslint-config-standard": "^12.0.0",
