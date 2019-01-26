@@ -1,0 +1,23 @@
+name: semantic-release-ado
+
+trigger:
+  - master
+
+variables:
+  buildConfiguration: Release
+
+jobs:
+- job: Publish
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+
+  - script: >
+      npx -p semantic-release
+      -p @semantic-release/changelog
+      -p @semantic-release/git
+      -p @semantic-release/npm
+      -p @semantic-release/github
+      semantic-release
+    env: { GH_TOKEN: $(GitHubToken), NPM_TOKEN: $(NpmToken) }
+    displayName: 'Semantic release'
