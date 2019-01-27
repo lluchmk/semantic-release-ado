@@ -3,7 +3,7 @@ Semantic release plugin for automatic builds on Azure DevOps pipelines.
 
 | Step      | Description |
 |-----------|-------------|
-| `prepare` | Stores the next version as a Azure DevOps pipeline variable availabe to downstream steps on the job. |
+| `prepare` | Stores the next version as an Azure DevOps pipeline variable availabe to downstream steps on the job. |
 
 ## Install
 
@@ -89,8 +89,8 @@ jobs:
 - job: Job1
   pool:
     vmImage: 'vs2017-win2016'
-  steps:
 
+  steps:
   - script: >
       npx -p semantic-release
       -p @semantic-release/git
@@ -105,7 +105,12 @@ jobs:
 
 - job: Job2
   dependsOn: Job1
-  pool: server
+  pool:
+    vmImage: 'vs2017-win2016'
   variables:
-    versionNumber: $[ dependencies.Pack.outputs['setOutputVars.versionNumber'] ]
+    versionNumber: $[ dependencies.Job1.outputs['setOutputVar.versionNumber'] ]
+
+  steps:
+  - script: echo $(versionNumber)
+    displayName: 'Show next version'
 ```
