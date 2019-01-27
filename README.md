@@ -1,2 +1,111 @@
 # semantic-release-ado
-Semantic release plugin for automatic releases on Azure DevOps pipelines.
+Semantic release plugin for automatic builds on Azure DevOps pipelines.
+
+| Step      | Description |
+|-----------|-------------|
+| `prepare` | Stores the next version as a Azure DevOps pipeline variable availabe to downstream steps on the job. |
+
+## Install
+
+```bash
+$ npm install -D semantic-release-ado
+```
+
+## Usage
+
+The plugin can be configured in the [**semantic-release** configuration file](https://github.com/semantic-release/semantic-release/blob/master/docs/usage/configuration.md#configuration):
+
+`YAML`:
+```yaml
+plugins:
+  - @semantic-release-ado"
+```
+
+`JSON`:
+```json
+{
+  "plugins": [
+    "semantic-release-ado",
+  ]
+}
+```
+
+The generated version number will be stored on a variable availabe to downstream steps on the job.
+By default this variable is named *nextRelease*, but the name can be configured in the plugin options.
+
+## Configuration
+
+### Options
+
+| **Options** | **Desctiption**                                       |
+|-------------|-------------------------------------------------------|
+| varName     | Name of the variable that will store the next version. Defaults to *nextRelease*. |
+
+The following examples store the generated version number in a variable named *version*.
+
+`YAML`:
+```yaml
+plugins:
+  - - "semantic-release-ado"
+    - varName: "version"
+```
+
+`JSON`:
+```json
+{
+  "plugins": [
+    ["semantic-release-ado", {
+      "varName": "version",
+    }],
+  ]
+}
+```
+
+## Azure DevOps build pipeline YAML example:
+
+Using the variable on the seme job:
+```yaml
+jobs:
+- job: Build
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+
+  - script: >
+      npx -p semantic-release
+      -p @semantic-release/git
+      -p semantic-release-ado
+      semantic-release
+    env: { GH_TOKEN: $(GitHubToken) }
+    displayName: 'Semantic release'
+
+  - script: echo $(nextRelease)
+    displayName: 'Show next version'
+```
+
+Using the variable on a later job:
+```yaml
+jobs:
+- job: Job1
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+
+  - script: >
+      npx -p semantic-release
+      -p @semantic-release/git
+      -p semantic-release-ado
+      semantic-release
+    env: { GH_TOKEN: $(GitHubToken) }
+    displayName: 'Semantic release'
+
+  - powershell: |
+      echo "##vso[task.setvariable variable=versionNumber;isOutput=true]$(nextRelease)"
+    name: setOutputVar
+
+- job: Job2
+  dependsOn: Job1
+  pool: server
+  variables:
+    versionNumber: $[ dependencies.Pack.outputs['setOutputVars.versionNumber'] ]
+```
