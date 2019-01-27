@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/lluchmk/semantic-release-ado/compare/v1.0.1...v1.0.2) (2019-01-27)
+
+
+### Bug Fixes
+
+* Remove unneded [skip ci] from release commit. ([304b0ff](https://github.com/lluchmk/semantic-release-ado/commit/304b0ff))
+
 ## [1.0.1](https://github.com/lluchmk/semantic-release-ado/compare/v1.0.0...v1.0.1) (2019-01-27)
 
 
