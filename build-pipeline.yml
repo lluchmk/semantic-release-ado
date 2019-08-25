@@ -21,3 +21,27 @@ jobs:
       semantic-release
     env: { GH_TOKEN: $(GitHubToken), NPM_TOKEN: $(NpmToken) }
     displayName: 'Semantic release'
+
+  - script: |
+     npm pack
+    displayName: 'Pack for release on NPM'
+
+  - task: CopyFiles@2
+    inputs:
+     sourceFolder: '$(Build.SourcesDirectory)'
+     contents: '*.tgz'
+     targetFolder: '$(Build.ArtifactStagingDirectory)/npm'
+    displayName: 'Copy npm packed artifact'
+  
+  - task: CopyFiles@2
+    inputs:
+     sourceFolder: '$(Build.SourcesDirectory)'
+     contents: 'package.json'
+     targetFolder: '$(Build.ArtifactStagingDirectory)/npm'
+    displayName: 'Copy package.json'
+  
+  - task: PublishBuildArtifacts@1
+    inputs:
+     pathtoPublish: '$(Build.ArtifactStagingDirectory)/npm'
+     artifactName: npm
+    displayName: 'Publish npm artifact'
