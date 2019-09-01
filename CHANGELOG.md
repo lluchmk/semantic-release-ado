@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/lluchmk/semantic-release-ado/compare/v1.0.2...v1.1.0) (2019-09-01)
+
+
+### Features
+
+* retrieve also current version ([cf172b4](https://github.com/lluchmk/semantic-release-ado/commit/cf172b4))
+
 ## [1.0.2](https://github.com/lluchmk/semantic-release-ado/compare/v1.0.1...v1.0.2) (2019-01-27)
 
 
