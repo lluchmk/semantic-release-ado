@@ -5,9 +5,10 @@
 
 Semantic release plugin for automatic builds on Azure DevOps pipelines.
 
-| Step      | Description |
-|-----------|-------------|
-| `prepare` | Stores the next version as an Azure DevOps pipeline variable availabe to downstream steps on the job. |
+| Step             | Description |
+|------------------|-------------|
+| `analyzeCommits` | If configured to do so, stores the current version as an Azure DevOps pipeline variable. |
+| `prepare`        | Stores the next version as an Azure DevOps pipeline variable availabe to downstream steps on the job. |
 
 ## Install
 
@@ -35,7 +36,7 @@ plugins:
 ```
 
 The generated version number will be stored on a variable availabe to downstream steps on the job.
-By default this variable is named *nextRelease*, but the name can be configured in the plugin options.  
+By default this variable is named *nextRelease*, but the name can be configured in the plugin options.
 The behavior when no new release is available can be configured with *setOnlyOnRelease*.
 
 ## Configuration
