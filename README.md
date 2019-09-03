@@ -35,15 +35,18 @@ plugins:
 ```
 
 The generated version number will be stored on a variable availabe to downstream steps on the job.
-By default this variable is named *nextRelease*, but the name can be configured in the plugin options.
+By default this variable is named *nextRelease*, but the name can be configured in the plugin options.  
+The behavior when no new release is available can be configured with *setOnlyOnRelease*.
 
 ## Configuration
 
 ### Options
 
-| **Options** | **Desctiption**                                       |
-|-------------|-------------------------------------------------------|
-| varName     | Name of the variable that will store the next version. Defaults to *nextRelease*. |
+| **Options**      | **Desctiption**                                       |
+|------------------|-------------------------------------------------------|
+| varName          | Name of the variable that will store the next version. Defaults to *nextRelease*. |
+| setOnlyOnRelease | `Bool`. Determines if the variable with the new version will be set only when a new version is available. <br> If set to `false`, the next version variable will store the last released version when no new version is available.<br> Defaults to *true*. |
+
 
 The following examples store the generated version number in a variable named *version*.
 
@@ -52,6 +55,7 @@ The following examples store the generated version number in a variable named *v
 plugins:
   - - "semantic-release-ado"
     - varName: "version"
+    - setOnlyOnRelease: true
 ```
 
 `JSON`:
@@ -60,6 +64,7 @@ plugins:
   "plugins": [
     ["semantic-release-ado", {
       "varName": "version",
+      "setOnlyOnRelease": true
     }],
   ]
 }
