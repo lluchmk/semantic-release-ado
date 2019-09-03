@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/lluchmk/semantic-release-ado/compare/v1.1.0...v1.2.0) (2019-09-03)
+
+
+### Features
+
+* Allow configuring behavior on nextRelease when there's no relevant changes. ([9c3d353](https://github.com/lluchmk/semantic-release-ado/commit/9c3d353))
+
 # [1.1.0](https://github.com/lluchmk/semantic-release-ado/compare/v1.0.2...v1.1.0) (2019-09-01)
 
 
