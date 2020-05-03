@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/lluchmk/semantic-release-ado/compare/v1.2.1...v1.2.2) (2020-05-03)
+
+
+### Bug Fixes
+
+*  bump peerDependencies ([ca35a96](https://github.com/lluchmk/semantic-release-ado/commit/ca35a96a4d6a91f5d238d59c433db4644d16d7f5))
+
 ## [1.2.1](https://github.com/lluchmk/semantic-release-ado/compare/v1.2.0...v1.2.1) (2020-02-12)
 
 
