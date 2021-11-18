@@ -1,7 +1,7 @@
 const analyzeCommits = require('./lib/analyzeCommits')
-const prepare = require('./lib/prepare')
+const verifyRelease = require('./lib/verifyRelease')
 
 module.exports = {
   analyzeCommits,
-  prepare
+  verifyRelease
 }
