@@ -8,7 +8,7 @@ Semantic release plugin for automatic builds on Azure DevOps pipelines.
 | Step             | Description |
 |------------------|-------------|
 | `analyzeCommits` | If configured to do so, stores the current version as an Azure DevOps pipeline variable. |
-| `prepare`        | Stores the next version as an Azure DevOps pipeline variable availabe to downstream steps on the job. |
+| `verifyRelease`  | Stores the next version as an Azure DevOps pipeline variable availabe to downstream steps on the job. |
 
 ## Install
 
@@ -56,7 +56,7 @@ The following examples store the generated version number in a variable named *v
 plugins:
   - - "semantic-release-ado"
     - varName: "version"
-    - setOnlyOnRelease: true
+      setOnlyOnRelease: true
 ```
 
 `JSON`:
