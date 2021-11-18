@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/lluchmk/semantic-release-ado/compare/v1.2.2...v1.3.0) (2021-11-18)
+
+
+### Features
+
+* Move version variable assignment to verifyRelease ([8ee7dd4](https://github.com/lluchmk/semantic-release-ado/commit/8ee7dd4f5c12cebf75662c57f4b105c206f64f6e))
+
 # [1.3.0-alpha.1](https://github.com/lluchmk/semantic-release-ado/compare/v1.2.2...v1.3.0-alpha.1) (2021-11-18)
 
 

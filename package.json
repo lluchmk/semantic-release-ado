@@ -1,6 +1,6 @@
 {
   "name": "semantic-release-ado",
-  "version": "1.3.0-alpha.1",
+  "version": "1.3.0",
   "description": "Semantic release plugin for automatic releases on Azure DevOps pipelines.",
   "main": "index.js",
   "scripts": {
