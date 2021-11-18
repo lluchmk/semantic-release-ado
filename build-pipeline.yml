@@ -2,6 +2,8 @@ name: semantic-release-ado
 
 trigger:
   - master
+  - alpha
+  - beta
 
 variables:
   buildConfiguration: Release
