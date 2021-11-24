@@ -1,3 +1,12 @@
+## [1.3.1](https://github.com/lluchmk/semantic-release-ado/compare/v1.3.0...v1.3.1) (2021-11-24)
+
+
+### Bug Fixes
+
+* 🐛 Fixes dependancy of semantic-release to 18.0.9 ([b7770b3](https://github.com/lluchmk/semantic-release-ado/commit/b7770b3258d79e59d14d38a8cc76a5ebec963817)), closes [#17](https://github.com/lluchmk/semantic-release-ado/issues/17)
+* 🐛 Removed upper boundary ([8be0302](https://github.com/lluchmk/semantic-release-ado/commit/8be0302ec2265d5394ed421c6e9ef713144613f9)), closes [#17](https://github.com/lluchmk/semantic-release-ado/issues/17)
+* **deps:** remove upper boundary of semantic-release ([7c162cd](https://github.com/lluchmk/semantic-release-ado/commit/7c162cd86d6cc1848fa492ea607abb1d50abd4f7))
+
 # [1.3.0](https://github.com/lluchmk/semantic-release-ado/compare/v1.2.2...v1.3.0) (2021-11-18)
 
 
