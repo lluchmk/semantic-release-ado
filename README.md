@@ -47,6 +47,7 @@ The behavior when no new release is available can be configured with *setOnlyOnR
 |------------------|-------------------------------------------------------|
 | varName          | Name of the variable that will store the next version. Defaults to *nextRelease*. |
 | setOnlyOnRelease | `Bool`. Determines if the variable with the new version will be set only when a new version is available. <br> If set to `false`, the next version variable will store the last released version when no new version is available.<br> Defaults to *true*. |
+| isOutput | `Bool`. Determines whether or not you want to set your version to be set as output for the step<br> If set to `true`, the version will be set as output and will be available in susequent stages that depend on it.<br> Defaults to *false*. |
 
 
 The following examples store the generated version number in a variable named *version*.
@@ -57,6 +58,7 @@ plugins:
   - - "semantic-release-ado"
     - varName: "version"
       setOnlyOnRelease: true
+      isOutput: true #defaults to false
 ```
 
 `JSON`:
@@ -65,7 +67,8 @@ plugins:
   "plugins": [
     ["semantic-release-ado", {
       "varName": "version",
-      "setOnlyOnRelease": true
+      "setOnlyOnRelease": true,
+      "isOutput": true //defaults to false
     }],
   ]
 }
