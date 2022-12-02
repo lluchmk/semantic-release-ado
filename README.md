@@ -47,6 +47,7 @@ The behavior when no new release is available can be configured with *setOnlyOnR
 |------------------|-------------------------------------------------------|
 | varName          | Name of the variable that will store the next version. Defaults to *nextRelease*. |
 | setOnlyOnRelease | `Bool`. Determines if the variable with the new version will be set only when a new version is available. <br> If set to `false`, the next version variable will store the last released version when no new version is available.<br> Defaults to *true*. |
+| isOutput         | `Bool`. Determines whether the version will be set as an output variable, so it is available in later stages.<br> Defaults to *false*. |
 
 
 The following examples store the generated version number in a variable named *version*.
@@ -57,6 +58,7 @@ plugins:
   - - "semantic-release-ado"
     - varName: "version"
       setOnlyOnRelease: true
+      isOutput: true #defaults to false
 ```
 
 `JSON`:
@@ -65,7 +67,8 @@ plugins:
   "plugins": [
     ["semantic-release-ado", {
       "varName": "version",
-      "setOnlyOnRelease": true
+      "setOnlyOnRelease": true,
+      "isOutput": true //defaults to false
     }],
   ]
 }
@@ -92,8 +95,25 @@ jobs:
   - script: echo $(nextRelease)
     displayName: 'Show next version'
 ```
+### Using the variable on a later job:
+### Configuration:
+Below is the configuration for setting `isOutput` to true, which will allow the variable to be referenced from other jobs/stages
 
-Using the variable on a later job:
+`JSON`: 
+```json
+{
+  "plugins": [
+    ["semantic-release-ado", {
+      "varName": "version",
+      "setOnlyOnRelease": true,
+      "isOutput": true //sets version as output for later use
+    }],
+  ]
+}
+```
+
+### In another job:
+
 ```yaml
 jobs:
 - job: Job1
@@ -109,10 +129,6 @@ jobs:
     env: { GH_TOKEN: $(GitHubToken) }
     displayName: 'Semantic release'
 
-  - powershell: |
-      echo "##vso[task.setvariable variable=versionNumber;isOutput=true]$(nextRelease)"
-    name: setOutputVar
-
 - job: Job2
   dependsOn: Job1
   pool:
@@ -124,3 +140,41 @@ jobs:
   - script: echo $(versionNumber)
     displayName: 'Show next version'
 ```
+
+### In another stage:
+
+```yaml
+stages: 
+  - stage: Stage1
+    jobs:
+    - job: Job1
+      pool:
+        vmImage: 'vs2017-win2016'
+
+      steps:
+      - script: >
+          npx -p semantic-release
+          -p @semantic-release/git
+          -p semantic-release-ado
+          semantic-release
+        env: { GH_TOKEN: $(GitHubToken) }
+        name: semantic-release
+        displayName: 'Semantic release'
+
+  - stage: Stage2
+    dependsOn: Stage1
+    #want to make sure variable is set before we continue to run the stage
+    condition: and(succeeded(), ne(dependencies.Stage1.outputs['Job1.semantic-release.version'], ''))
+    jobs:
+    - job: Job2
+      variables:
+          versionNumber: $[ stageDependencies.Stage1.Job1.outputs['semantic-release.version'] ]
+      pool:
+        vmImage: 'vs2017-win2016'
+      variables:
+        versionNumber:
+      steps:
+      - script: echo $(versionNumber)
+        displayName: 'Show next version'
+```
+
