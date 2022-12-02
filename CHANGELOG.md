@@ -1,3 +1,16 @@
+# [1.4.0](https://github.com/lluchmk/semantic-release-ado/compare/v1.3.1...v1.4.0) (2022-12-02)
+
+
+### Bug Fixes
+
+* **docs:** updating readme with isOutput documentation ([da378b0](https://github.com/lluchmk/semantic-release-ado/commit/da378b07ddb15ff13b24ae96e10b2ab2f8779679))
+
+
+### Features
+
+* adding the ability to set the `isOutput` to true from within plugin ([fbfe337](https://github.com/lluchmk/semantic-release-ado/commit/fbfe337546906a9c1c817e102c2ddf608e742a4d))
+* adding the ability to set the `isOutput` to true from within plugin ([09ffbd0](https://github.com/lluchmk/semantic-release-ado/commit/09ffbd05a9e590e2e2655e61af4dac5155eabd93))
+
 ## [1.3.1](https://github.com/lluchmk/semantic-release-ado/compare/v1.3.0...v1.3.1) (2021-11-24)
 
 
