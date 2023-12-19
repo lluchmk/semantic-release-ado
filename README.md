@@ -23,7 +23,7 @@ The plugin can be configured in the [**semantic-release** configuration file](ht
 `YAML`:
 ```yaml
 plugins:
-  - @semantic-release-ado"
+  - "semantic-release-ado"
 ```
 
 `JSON`:
