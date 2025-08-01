@@ -1,0 +1,122 @@
+name: Semantic Release - GitHub
+
+on:
+  push:
+    branches:
+      - master  # or main, depending on your default branch
+  pull_request:
+    branches:
+      - master  # Run on PRs to ensure everything works before merging
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run (no actual release)'
+        required: false
+        default: 'false'
+        type: boolean
+      debug:
+        description: 'Debug mode'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          # First try to use the faster npm ci, if it fails (due to outdated lock file), use npm install
+          npm ci || npm install
+          
+      - name: Run linting
+        run: |
+          # First try to auto-fix lint issues, then run regular lint
+          npm run lint:fix
+          npm run lint
+        
+  release:
+    name: Release
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # to create release
+      issues: write        # to comment on issues
+      pull-requests: write # to comment on PRs
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          # First try to use the faster npm ci, if it fails (due to outdated lock file), use npm install
+          npm ci || npm install
+          
+      - name: Update package-lock if needed
+        run: |
+          if [[ $(git status --porcelain package-lock.json) ]]; then
+            echo "Package lock has changed, committing updates"
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add package-lock.json
+            git commit -m "chore: update package-lock.json [skip ci]"
+            git push
+          else
+            echo "No changes to package-lock.json"
+          fi
+        continue-on-error: true
+          
+      - name: Set DEBUG env if debug mode is enabled
+        if: ${{ github.event.inputs.debug == 'true' }}
+        run: echo "DEBUG=semantic-release:*" >> $GITHUB_ENV
+        
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}  # Only needed if publishing to npm
+        run: |
+          if [[ "${{ github.event.inputs.dry-run }}" == "true" ]]; then
+            npx semantic-release --dry-run
+          else
+            npx semantic-release
+          fi
+          
+      - name: Store version number
+        if: success()
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Released version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Create summary output for workflow run
+          echo "## 🚀 Release Information" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Date:** $(date +'%Y-%m-%d')" >> $GITHUB_STEP_SUMMARY
+          if [ -f "CHANGELOG.md" ]; then
+            echo "**Changelog:** See [CHANGELOG.md](../blob/master/CHANGELOG.md)" >> $GITHUB_STEP_SUMMARY
+          fi
+        id: get_version

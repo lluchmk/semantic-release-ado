@@ -1,0 +1,71 @@
+name: Create Release Tag
+
+on:
+  workflow_run:
+    workflows: ["Semantic Release"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (e.g., v1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  create-tag:
+    name: Create Git Tag
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+      
+      - name: Get version from package.json
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "Detected version: v${VERSION}"
+      
+      - name: Set manual version
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: manual-version
+        run: |
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          echo "Using manual version: ${{ github.event.inputs.version }}"
+      
+      - name: Create Tag
+        id: tag-version
+        run: |
+          VERSION="${{ github.event_name == 'workflow_dispatch' && steps.manual-version.outputs.VERSION || steps.get-version.outputs.VERSION }}"
+          
+          # Skip if tag already exists
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists. Skipping tag creation."
+            exit 0
+          fi
+          
+          # Configure Git
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          
+          # Create and push tag
+          echo "Creating tag: $VERSION"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          
+          echo "TAG_NAME=$VERSION" >> $GITHUB_OUTPUT
+          echo "Successfully created and pushed tag $VERSION"

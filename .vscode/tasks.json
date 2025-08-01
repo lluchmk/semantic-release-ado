@@ -1,0 +1,72 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Semantic Commit",
+      "type": "shell",
+      "command": "./tools/semantic-commit.sh",
+      "args": [
+        "-t", "${input:commitType}",
+        "-m", "${input:commitMessage}",
+        "${input:commitScope}",
+        "${input:breakingChange}",
+        "${input:commitDescription}"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "commitType",
+      "description": "Commit Type",
+      "type": "pickString",
+      "options": [
+        "fix",
+        "feat",
+        "perf",
+        "docs",
+        "style",
+        "refactor",
+        "test",
+        "chore",
+        "build",
+        "ci",
+        "revert"
+      ],
+      "default": "feat"
+    },
+    {
+      "id": "commitMessage",
+      "description": "Commit Message",
+      "type": "promptString",
+      "default": "add new feature"
+    },
+    {
+      "id": "commitScope",
+      "description": "Scope (optional, press Enter to skip)",
+      "type": "promptString",
+      "default": ""
+    },
+    {
+      "id": "breakingChange",
+      "description": "Include breaking change?",
+      "type": "pickString",
+      "options": [
+        "No",
+        "Yes"
+      ],
+      "default": "No"
+    },
+    {
+      "id": "commitDescription",
+      "description": "Extended description (optional, press Enter to skip)",
+      "type": "promptString",
+      "default": ""
+    }
+  ]
+}
