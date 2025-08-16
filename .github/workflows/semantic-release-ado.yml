@@ -1,0 +1,53 @@
+name: Semantic Release - Azure DevOps
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Release and Update ADO
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          # First try to use the faster npm ci, if it fails (due to outdated lock file), use npm install
+          npm ci || npm install
+          
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}  # Only needed if publishing to npm
+        run: npx semantic-release
+      
+      - name: Get Version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Update Azure DevOps Variable
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: 'azure-pipelines.yml'
+        env:
+          variables.version: ${{ steps.version.outputs.VERSION }}

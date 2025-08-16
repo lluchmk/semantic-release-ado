@@ -1,0 +1,275 @@
+name: Semantic Release - GitHub
+
+on:
+  push:
+    branches:
+      - master  # or main, depending on your default branch
+  pull_request:
+    branches:
+      - master  # Run on PRs to ensure everything works before merging
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run (no actual release)'
+        required: false
+        default: 'false'
+        type: boolean
+      debug:
+        description: 'Debug mode'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          # First try to use the faster npm ci, if it fails (due to outdated lock file), use npm install
+          npm ci || npm install
+          
+      - name: Run linting
+        run: |
+          # First try to auto-fix lint issues, then run regular lint
+          npm run lint:fix
+          npm run lint
+        
+  release:
+    name: Release
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # to create release
+      issues: write        # to comment on issues
+      pull-requests: write # to comment on PRs
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          # First try to use the faster npm ci, if it fails (due to outdated lock file), use npm install
+          npm ci || npm install
+          
+      - name: Update package-lock if needed
+        run: |
+          if [[ $(git status --porcelain package-lock.json) ]]; then
+            echo "Package lock has changed, committing updates"
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add package-lock.json
+            git commit -m "chore: update package-lock.json [skip ci]"
+            git push
+          else
+            echo "No changes to package-lock.json"
+          fi
+        continue-on-error: true
+          
+      - name: Set DEBUG env if debug mode is enabled
+        if: ${{ github.event.inputs.debug == 'true' }}
+        run: echo "DEBUG=semantic-release:*" >> $GITHUB_ENV
+        
+      - name: Analyze Commits
+        id: analyze
+        run: |
+          echo "Analyzing commits for semantic version bump..."
+          # Get all commit messages since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+          
+          if [ "$LAST_TAG" = "none" ]; then
+            echo "No previous tags found. This will be the initial release."
+            COMMITS=$(git log --pretty=format:"%s")
+          else
+            echo "Last tag found: $LAST_TAG"
+            COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"%s")
+          fi
+          
+          # Count commit types
+          FEATURE_COUNT=$(echo "$COMMITS" | grep -c "^feat" || true)
+          FIX_COUNT=$(echo "$COMMITS" | grep -c "^fix" || true)
+          PERF_COUNT=$(echo "$COMMITS" | grep -c "^perf" || true)
+          BREAKING_COUNT=$(echo "$COMMITS" | grep -c -E "(^.+!:|BREAKING CHANGE:)" || true)
+          
+          echo "Commit analysis:"
+          echo "- Features: $FEATURE_COUNT"
+          echo "- Fixes: $FIX_COUNT"
+          echo "- Performance: $PERF_COUNT"
+          echo "- Breaking changes: $BREAKING_COUNT"
+          
+          echo "FEATURE_COUNT=$FEATURE_COUNT" >> $GITHUB_OUTPUT
+          echo "FIX_COUNT=$FIX_COUNT" >> $GITHUB_OUTPUT
+          echo "PERF_COUNT=$PERF_COUNT" >> $GITHUB_OUTPUT
+          echo "BREAKING_COUNT=$BREAKING_COUNT" >> $GITHUB_OUTPUT
+      
+      - name: Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}  # Only needed if publishing to npm
+        run: |
+          if [[ "${{ github.event.inputs.dry-run }}" == "true" ]]; then
+            echo "Running in dry-run mode..."
+            npx semantic-release --dry-run
+          else
+            # Determine expected version bump for summary
+            if [[ "${{ steps.analyze.outputs.BREAKING_COUNT }}" -gt 0 ]]; then
+              echo "Expecting a MAJOR version bump due to breaking changes"
+            elif [[ "${{ steps.analyze.outputs.FEATURE_COUNT }}" -gt 0 ]]; then
+              echo "Expecting a MINOR version bump due to new features"
+            elif [[ "${{ steps.analyze.outputs.FIX_COUNT }}" -gt 0 || "${{ steps.analyze.outputs.PERF_COUNT }}" -gt 0 ]]; then
+              echo "Expecting a PATCH version bump due to fixes or performance improvements"
+            else
+              echo "No version-affecting commits detected"
+            fi
+            
+            # Run semantic-release
+            npx semantic-release
+          fi
+          
+      - name: Store version number
+        if: success()
+        run: |
+          # Get old version and new version
+          OLD_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          VERSION=$(node -p "require('./package.json').version")
+          
+          # Clean up version strings (remove v prefix if present)
+          OLD_VERSION=${OLD_VERSION#v}
+          
+          # Extract major.minor.patch components
+          OLD_MAJOR=$(echo $OLD_VERSION | cut -d. -f1)
+          OLD_MINOR=$(echo $OLD_VERSION | cut -d. -f2)
+          OLD_PATCH=$(echo $OLD_VERSION | cut -d. -f3)
+          
+          NEW_MAJOR=$(echo $VERSION | cut -d. -f1)
+          NEW_MINOR=$(echo $VERSION | cut -d. -f2)
+          NEW_PATCH=$(echo $VERSION | cut -d. -f3)
+          
+          # Determine bump type
+          if [ "$NEW_MAJOR" -gt "$OLD_MAJOR" ]; then
+            BUMP_TYPE="MAJOR"
+          elif [ "$NEW_MINOR" -gt "$OLD_MINOR" ]; then
+            BUMP_TYPE="MINOR"
+          elif [ "$NEW_PATCH" -gt "$OLD_PATCH" ]; then
+            BUMP_TYPE="PATCH"
+          else
+            BUMP_TYPE="NONE"
+          fi
+          
+          echo "Released version: $VERSION (${BUMP_TYPE} bump from $OLD_VERSION)"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          
+          # Create summary output for workflow run
+          echo "## 🚀 Release Information" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "**Previous Version:** v$OLD_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "**Bump Type:** $BUMP_TYPE" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Date:** $(date +'%Y-%m-%d')" >> $GITHUB_STEP_SUMMARY
+          
+          # Add commit statistics
+          echo "### Commit Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- Features: ${{ steps.analyze.outputs.FEATURE_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Fixes: ${{ steps.analyze.outputs.FIX_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance Improvements: ${{ steps.analyze.outputs.PERF_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Breaking Changes: ${{ steps.analyze.outputs.BREAKING_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "CHANGELOG.md" ]; then
+            echo "### Changes" >> $GITHUB_STEP_SUMMARY
+            echo "See [CHANGELOG.md](../blob/master/CHANGELOG.md) for details" >> $GITHUB_STEP_SUMMARY
+          fi
+        id: get_version
+        
+      - name: Notify about version bump
+        if: success() && steps.get_version.outputs.BUMP_TYPE != 'NONE'
+        run: |
+          echo "::notice title=Version Bump::Successfully bumped version from v${OLD_VERSION} to v${VERSION} (${BUMP_TYPE})"
+          
+      - name: Create GitHub Release
+        if: success() && steps.get_version.outputs.BUMP_TYPE != 'NONE' && github.event.inputs.dry-run != 'true'
+        id: create_release
+        uses: actions/github-script@v6
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+          BUMP_TYPE: ${{ steps.get_version.outputs.BUMP_TYPE }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.VERSION;
+            const bumpType = process.env.BUMP_TYPE;
+            
+            // Try to get release notes from CHANGELOG.md
+            let releaseNotes = '';
+            try {
+              const fs = require('fs');
+              const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+              
+              // Extract the latest release notes
+              const versionHeader = `## [${version}]`;
+              const parts = changelog.split(versionHeader);
+              if (parts.length > 1) {
+                const nextVersionIndex = parts[1].indexOf('## [');
+                if (nextVersionIndex !== -1) {
+                  releaseNotes = parts[1].substring(0, nextVersionIndex);
+                } else {
+                  releaseNotes = parts[1];
+                }
+              }
+            } catch (error) {
+              console.log('Could not extract release notes from CHANGELOG.md: ', error);
+            }
+            
+            // If release notes extraction failed, create generic notes
+            if (!releaseNotes) {
+              releaseNotes = `# Release v${version} (${bumpType})\n\n`;
+              
+              if (bumpType === 'MAJOR') {
+                releaseNotes += '## 💥 Breaking Changes\n\nThis release contains breaking changes. Please review the commits for details.\n\n';
+              }
+              
+              releaseNotes += 'See [CHANGELOG.md](./CHANGELOG.md) for full details.\n';
+            }
+            
+            // Create the release
+            try {
+              const release = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: `v${version}`,
+                name: `Release v${version}`,
+                body: releaseNotes.trim(),
+                draft: false,
+                prerelease: false,
+                generate_release_notes: !releaseNotes
+              });
+              
+              console.log(`Created release: ${release.data.html_url}`);
+              return release.data.id;
+            } catch (error) {
+              console.error('Failed to create release:', error);
+              core.setFailed('Failed to create GitHub release');
+            }

@@ -4,7 +4,8 @@
   "description": "Semantic release plugin for automatic releases on Azure DevOps pipelines.",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint lib index.js"
+    "lint": "eslint lib index.js",
+    "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,10 @@
     "eslint-plugin-import": "^2.15.0",
     "eslint-plugin-node": "^8.0.1",
     "eslint-plugin-promise": "^4.0.1",
+    "semantic-release": "^21.0.7",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^10.0.5",
     "eslint-plugin-standard": "^4.0.0"
   },
   "peerDependencies": {
