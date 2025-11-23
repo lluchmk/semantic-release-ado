@@ -9,6 +9,7 @@ Semantic release plugin for automatic builds on Azure DevOps pipelines.
 |------------------|-------------|
 | `analyzeCommits` | If configured to do so, stores the current version as an Azure DevOps pipeline variable. |
 | `verifyRelease`  | Stores the next version as an Azure DevOps pipeline variable availabe to downstream steps on the job. |
+| `generateNotes`  | Optionally writes release notes to a markdown file with configurable behavior (prepend, append, or overwrite). Runs during the generateNotes stage and works in dry-run mode. |
 
 ## Install
 
@@ -49,8 +50,21 @@ The behavior when no new release is available can be configured with *setOnlyOnR
 | setOnlyOnRelease | `Bool`. Determines if the variable with the new version will be set only when a new version is available. <br> If set to `false`, the next version variable will store the last released version when no new version is available.<br> Defaults to *true*. |
 | isOutput         | `Bool`. Determines whether the version will be set as an output variable, so it is available in later stages.<br> Defaults to *false*. |
 
+#### Release Notes File Generation
 
-The following examples store the generated version number in a variable named *version*.
+These options enable writing release notes to a markdown file during the `generateNotes` stage.
+
+| **Options**               | **Description**                                       |
+|---------------------------|-------------------------------------------------------|
+| writeNotesFile            | `Bool`. Enables writing release notes to a markdown file. Defaults to *false*. |
+| notesFilePath             | Path where the release notes file will be written. Defaults to *CHANGELOG-latest.md*. |
+| notesFileBehaviour        | `String`. How to handle existing file: *prepend* (new notes at top), *append* (new notes at bottom), or *overwrite* (replace entire file). Defaults to *prepend*. |
+
+### Examples
+
+#### Basic Configuration
+
+The following example stores the generated version number in a variable named *version*.
 
 `YAML`:
 ```yaml
@@ -70,6 +84,55 @@ plugins:
       "setOnlyOnRelease": true,
       "isOutput": true //defaults to false
     }],
+  ]
+}
+```
+
+#### Writing Release Notes to File
+
+The following examples show how to enable release notes file generation with different behaviors.
+
+**Prepend mode (latest releases at top):**
+
+`JSON`:
+```json
+{
+  "plugins": [
+    ["@at-blacknight/semantic-release-ado", {
+      "writeNotesFile": true,
+      "notesFilePath": "CHANGELOG-latest.md",
+      "notesFileBehaviour": "prepend"
+    }]
+  ]
+}
+```
+
+**Append mode (chronological order):**
+
+`JSON`:
+```json
+{
+  "plugins": [
+    ["@at-blacknight/semantic-release-ado", {
+      "writeNotesFile": true,
+      "notesFilePath": "CHANGELOG.md",
+      "notesFileBehaviour": "append"
+    }]
+  ]
+}
+```
+
+**Overwrite mode (keep only latest release):**
+
+`JSON`:
+```json
+{
+  "plugins": [
+    ["@at-blacknight/semantic-release-ado", {
+      "writeNotesFile": true,
+      "notesFilePath": "LATEST-RELEASE.md",
+      "notesFileBehaviour": "overwrite"
+    }]
   ]
 }
 ```
@@ -99,7 +162,7 @@ jobs:
 ### Configuration:
 Below is the configuration for setting `isOutput` to true, which will allow the variable to be referenced from other jobs/stages
 
-`JSON`: 
+`JSON`:
 ```json
 {
   "plugins": [
@@ -144,7 +207,7 @@ jobs:
 ### In another stage:
 
 ```yaml
-stages: 
+stages:
   - stage: Stage1
     jobs:
     - job: Job1
